@@ -2,6 +2,7 @@ package com.example.backend.demo_login.Config;
 
 import com.example.backend.demo_login.Service.JWTService;
 import com.example.backend.demo_login.Service.UserService;
+import com.mongodb.lang.NonNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +27,9 @@ public class JwtFilter extends OncePerRequestFilter {
     ApplicationContext context; // This is used to get the bean of JWTService
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                  @NonNull HttpServletResponse response, 
+                                  @NonNull FilterChain filterChain) throws ServletException, IOException {
      String authheader = request.getHeader("Authorization");
      String token = null;
      String username = null;

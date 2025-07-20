@@ -1,12 +1,12 @@
 package com.example.backend.demo_login;
 
+import com.example.backend.demo_login.User.Users;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 public class UserPrincipal implements UserDetails {
     private Users user;
