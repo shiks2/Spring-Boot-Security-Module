@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: spring-security-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: backendProject
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - spring-security-network
+
+  app:
+    build: .
+    container_name: spring-security-app
+    restart: unless-stopped
+    ports:
+      - "9091:9091"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: backendProject
+      MONGODB_USERNAME: admin
+      MONGODB_PASSWORD: password123
+      JWT_SECRET: your-very-secure-production-secret-key-minimum-256-bits-change-this-in-production
+      JWT_EXPIRATION: 3600000
+    depends_on:
+      - mongodb
+    networks:
+      - spring-security-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/api/auth/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  spring-security-network:
+    driver: bridge
