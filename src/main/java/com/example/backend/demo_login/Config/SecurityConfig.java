@@ -28,6 +28,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Slf4j
 @Configuration
 @EnableWebSecurity
@@ -69,12 +72,12 @@ public class SecurityConfig {
                     .accessDeniedHandler(customAccessDeniedHandler())
                 )
                 .headers(headers -> headers
-                    .frameOptions().deny()
-                    .contentTypeOptions().and()
-                    .httpStrictTransportSecurity(hstsConfig -> hstsConfig
-                        .maxAgeInSeconds(31536000)
-                        .includeSubdomains(true)
-                    )
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(withDefaults())
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                        )
                 )
                 .build();
     }
