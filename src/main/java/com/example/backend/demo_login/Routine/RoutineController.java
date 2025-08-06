@@ -1,6 +1,7 @@
 package com.example.backend.demo_login.Routine;
 
 import com.example.backend.demo_login.Auth.ApiResponse;
+import com.example.backend.demo_login.Enum.RoutineStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -148,6 +149,66 @@ public class RoutineController {
             log.error("Error updating routine {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error("Failed to update routine: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Update routine status
+     * PATCH /api/routines/{id}/status
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<Routine>> updateRoutineStatus(@PathVariable String id, @RequestBody RoutineStatusRequest statusRequest) {
+        log.info("Updating routine status with ID: {} to status: {}", id, statusRequest.getStatus());
+        
+        try {
+            Optional<Routine> updatedRoutine = routineService.updateRoutineStatus(id, statusRequest.getStatus());
+            if (updatedRoutine.isPresent()) {
+                return ResponseEntity.ok(ApiResponse.success(updatedRoutine.get(), "Routine status updated successfully"));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("Routine not found with ID: " + id));
+            }
+        } catch (Exception e) {
+            log.error("Error updating routine status {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("Failed to update routine status: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Get routines by status
+     * GET /api/routines/status/{status}
+     */
+    @GetMapping("/status/{status}")
+    public ResponseEntity<ApiResponse<List<Routine>>> getRoutinesByStatus(@PathVariable RoutineStatus status) {
+        log.info("Fetching routines with status: {}", status);
+        
+        try {
+            List<Routine> routines = routineService.getRoutinesByStatus(status);
+            return ResponseEntity.ok(ApiResponse.success(routines, "Routines with status " + status + " retrieved successfully"));
+        } catch (Exception e) {
+            log.error("Error fetching routines by status {}: {}", status, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch routines by status: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Get my routines by status
+     * GET /api/routines/my/status/{status}
+     */
+    @GetMapping("/my/status/{status}")
+    public ResponseEntity<ApiResponse<List<Routine>>> getMyRoutinesByStatus(@PathVariable RoutineStatus status) {
+        String currentUser = getCurrentUsername();
+        log.info("Fetching routines for current user: {} with status: {}", currentUser, status);
+        
+        try {
+            List<Routine> routines = routineService.getRoutinesByUserIdAndStatus(currentUser, status);
+            return ResponseEntity.ok(ApiResponse.success(routines, "Your routines with status " + status + " retrieved successfully"));
+        } catch (Exception e) {
+            log.error("Error fetching routines for current user {} with status {}: {}", currentUser, status, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch your routines by status: " + e.getMessage()));
         }
     }
     

@@ -1,5 +1,6 @@
 package com.example.backend.demo_login.Routine;
 
+import com.example.backend.demo_login.Enum.RoutineStatus;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -29,4 +30,12 @@ public interface RoutineRepository extends MongoRepository<Routine, String> {
     // Find by routineId and userId (not soft deleted)
     @Query("{'routineId': ?0, 'userId': ?1, 'deletedBy': null}")
     Optional<Routine> findByRoutineIdAndUserIdAndNotDeleted(String routineId, String userId);
+    
+    // Find routines by status (not soft deleted)
+    @Query("{'routineStatus': ?0, 'deletedBy': null}")
+    List<Routine> findByRoutineStatusAndNotDeleted(RoutineStatus status);
+    
+    // Find routines by userId and status (not soft deleted)
+    @Query("{'userId': ?0, 'routineStatus': ?1, 'deletedBy': null}")
+    List<Routine> findByUserIdAndRoutineStatusAndNotDeleted(String userId, RoutineStatus status);
 }

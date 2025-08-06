@@ -1,6 +1,7 @@
 package com.example.backend.demo_login.Routine;
 
 import com.example.backend.demo_login.Component.AuditDateTime;
+import com.example.backend.demo_login.Enum.RoutineStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -32,6 +33,11 @@ public class RoutineService {
             routine.setRoutineId(UUID.randomUUID().toString());
         }
         
+        // Set default status if not provided
+        if (routine.getRoutineStatus() == null) {
+            routine.setRoutineStatus(RoutineStatus.DRAFT);
+        }
+        
         // Set audit fields
         routine.setCreatedBy(currentUser);
         routine.setAuditDateTime(new AuditDateTime(Instant.now(), null, null));
@@ -42,7 +48,7 @@ public class RoutineService {
         }
         
         Routine savedRoutine = routineRepository.save(routine);
-        log.info("Routine created successfully with ID: {}", savedRoutine.getRoutineId());
+        log.info("Routine created successfully with ID: {} and status: {}", savedRoutine.getRoutineId(), savedRoutine.getRoutineStatus());
         
         return savedRoutine;
     }
@@ -87,6 +93,11 @@ public class RoutineService {
                     existingRoutine.setRoutineType(routineDetails.getRoutineType());
                     existingRoutine.setRoutineFrequency(routineDetails.getRoutineFrequency());
                     
+                    // Update routine status if provided
+                    if (routineDetails.getRoutineStatus() != null) {
+                        existingRoutine.setRoutineStatus(routineDetails.getRoutineStatus());
+                    }
+                    
                     // Update audit fields
                     existingRoutine.setUpdatedBy(currentUser);
                     if (existingRoutine.getAuditDateTime() != null) {
@@ -96,10 +107,54 @@ public class RoutineService {
                     }
                     
                     Routine updatedRoutine = routineRepository.save(existingRoutine);
-                    log.info("Routine updated successfully: {}", updatedRoutine.getRoutineId());
+                    log.info("Routine updated successfully: {} with status: {}", updatedRoutine.getRoutineId(), updatedRoutine.getRoutineStatus());
                     
                     return updatedRoutine;
                 });
+    }
+    
+    /**
+     * Update routine status
+     */
+    public Optional<Routine> updateRoutineStatus(String id, RoutineStatus newStatus) {
+        log.info("Updating routine status with ID: {} to status: {}", id, newStatus);
+        
+        return routineRepository.findByIdAndNotDeleted(id)
+                .map(existingRoutine -> {
+                    String currentUser = getCurrentUsername();
+                    
+                    // Update status
+                    existingRoutine.setRoutineStatus(newStatus);
+                    
+                    // Update audit fields
+                    existingRoutine.setUpdatedBy(currentUser);
+                    if (existingRoutine.getAuditDateTime() != null) {
+                        existingRoutine.getAuditDateTime().setUpdatedAt(Instant.now());
+                    } else {
+                        existingRoutine.setAuditDateTime(new AuditDateTime(null, Instant.now(), null));
+                    }
+                    
+                    Routine updatedRoutine = routineRepository.save(existingRoutine);
+                    log.info("Routine status updated successfully: {} to {}", updatedRoutine.getRoutineId(), updatedRoutine.getRoutineStatus());
+                    
+                    return updatedRoutine;
+                });
+    }
+    
+    /**
+     * Get routines by status
+     */
+    public List<Routine> getRoutinesByStatus(RoutineStatus status) {
+        log.info("Fetching routines with status: {}", status);
+        return routineRepository.findByRoutineStatusAndNotDeleted(status);
+    }
+    
+    /**
+     * Get routines by userId and status
+     */
+    public List<Routine> getRoutinesByUserIdAndStatus(String userId, RoutineStatus status) {
+        log.info("Fetching routines for user: {} with status: {}", userId, status);
+        return routineRepository.findByUserIdAndRoutineStatusAndNotDeleted(userId, status);
     }
     
     /**
