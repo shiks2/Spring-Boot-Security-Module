@@ -22,21 +22,21 @@ import java.util.List;
 @Data
 @Builder
 @Document(collection = "User")
-/*@CompoundIndex(def = "{'username': 1}", unique = true)
-@CompoundIndex(def = "{'email': 1}", unique = true)*/
+@CompoundIndex(def = "{'username': 1}", unique = true)
+@CompoundIndex(def = "{'email': 1}", unique = true)
 public class Users {
     @Id
     private String id;
     
     private String userId;
     
-    //@Indexed(unique = true)
+    @Indexed(unique = true)
     private String username;
     
     @JsonIgnore // Never serialize password
     private String password;
     
-   // @Indexed(unique = true)
+    @Indexed(unique = true)
     private String email;
     
     @Builder.Default

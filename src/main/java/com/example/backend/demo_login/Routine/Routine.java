@@ -7,6 +7,7 @@ import com.example.backend.demo_login.User.Users;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
@@ -14,6 +15,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Document(collection = "Routine")
 public class Routine {
+    @Id
+    private String id;
+    
     private String routineId;
     private String routineName;
     private String description;

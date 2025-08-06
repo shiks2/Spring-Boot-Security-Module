@@ -161,7 +161,7 @@ public class UserServices {
 
     private UserResponse mapToUserResponse(Users user) {
         return UserResponse.builder()
-                .id(user.getId())
+                .id(String.valueOf(user.getId()))
                 .userId(user.getUserId())
                 .username(user.getUsername())
                 .email(user.getEmail())

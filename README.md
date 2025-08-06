@@ -1,10 +1,10 @@
 # 🔐 Spring Boot Security Module
 
-A comprehensive, production-ready authentication and authorization system built with Spring Boot, Spring Security, and MongoDB. This module provides JWT-based authentication with robust security practices and comprehensive error handling.
+A comprehensive, production-ready authentication and authorization system built with Spring Boot, Spring Security, and PostgreSQL. This module provides JWT-based authentication with robust security practices and comprehensive error handling.
 
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2+-green.svg)](https://spring.io/projects/spring-boot)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-brightgreen.svg)](https://www.mongodb.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue.svg)](https://www.postgresql.org/)
 [![JWT](https://img.shields.io/badge/JWT-Latest-blue.svg)](https://jwt.io/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -25,10 +25,11 @@ A comprehensive, production-ready authentication and authorization system built 
 - **Rate Limiting Ready** - Architecture supports rate limiting implementation
 
 ### 🗄️ Database & Storage
-- **MongoDB Integration** - NoSQL database with Spring Data MongoDB
-- **Indexed Collections** - Optimized database queries with proper indexing
-- **Data Auditing** - Automatic timestamp management
-- **Connection Pooling** - Efficient database connection management
+- **PostgreSQL Integration** - Robust relational database with Spring Data JPA
+- **Database Migrations** - Flyway for version-controlled schema management
+- **Indexed Tables** - Optimized database queries with proper indexing
+- **Data Auditing** - Automatic timestamp management with JPA auditing
+- **Connection Pooling** - HikariCP for efficient database connection management
 
 ### 🔧 Development & Production Ready
 - **Environment Profiles** - Separate configurations for dev/prod
@@ -41,7 +42,7 @@ A comprehensive, production-ready authentication and authorization system built 
 
 ### Prerequisites
 - ☕ **Java 17+**
-- 🍃 **MongoDB 6.0+**
+- 🐘 **PostgreSQL 15+**
 - 🔧 **Maven 3.8+**
 - 🌐 **Git**
 
@@ -53,20 +54,20 @@ A comprehensive, production-ready authentication and authorization system built 
    cd Spring-Boot-Security-Module
    ```
 
-2. **Start MongoDB**
+2. **Start PostgreSQL**
    ```bash
    # Using Docker
-   docker run --name mongodb -d -p 27017:27017 mongo:latest
+   docker run --name postgresql -d -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB=backend_project postgres:15
    
-   # Or start your local MongoDB service
-   mongod --config /usr/local/etc/mongod.conf
+   # Or start your local PostgreSQL service
+   sudo systemctl start postgresql
    ```
 
 3. **Configure Environment Variables**
    ```bash
    # Create a .env file or set environment variables
    export JWT_SECRET="your-very-secure-256-bit-secret-key-here"
-   export MONGODB_DATABASE="backendProject"
+   export DB_PASSWORD="your-database-password"
    export SPRING_PROFILES_ACTIVE="dev"
    ```
 
@@ -185,6 +186,28 @@ Expected response:
 #### ❤️ Health Check
 **GET** `/api/auth/health`
 
+## 🗄️ Database Configuration
+
+#### Development Setup
+```properties
+# PostgreSQL Configuration for Development
+spring.datasource.url=jdbc:postgresql://localhost:5432/backend_project_dev
+spring.datasource.username=postgres
+spring.datasource.password=password
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+```
+
+#### Production Setup
+```properties
+# PostgreSQL Configuration for Production
+spring.datasource.url=jdbc:postgresql://localhost:5432/backend_project
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD:password}
+spring.jpa.hibernate.ddl-auto=validate
+spring.flyway.enabled=true
+```
+
 ## ⚙️ Configuration
 
 ### Environment Variables
@@ -193,11 +216,9 @@ Expected response:
 |----------|-------------|---------|----------|
 | `JWT_SECRET` | Secret key for JWT signing (min 256 bits) | Generated | ✅ |
 | `JWT_EXPIRATION` | Token expiration time in milliseconds | `3600000` | ❌ |
-| `MONGODB_HOST` | MongoDB host | `localhost` | ❌ |
-| `MONGODB_PORT` | MongoDB port | `27017` | ❌ |
-| `MONGODB_DATABASE` | Database name | `backendProject` | ❌ |
-| `MONGODB_USERNAME` | Database username | - | ❌ |
-| `MONGODB_PASSWORD` | Database password | - | ❌ |
+| `DB_USERNAME` | PostgreSQL username | `postgres` | ❌ |
+| `DB_PASSWORD` | PostgreSQL password | `password` | ✅ |
+| `SPRING_DATASOURCE_URL` | Database connection URL | See config | ❌ |
 | `SERVER_PORT` | Application port | `9091` | ❌ |
 
 ### 🏗️ Application Profiles
@@ -243,36 +264,79 @@ server.error.include-stacktrace=never
 
 ## 🗄️ Database Schema
 
-### Users Collection
-```javascript
-{
-  "_id": ObjectId("..."),
-  "userId": "johndoe:john@example.com",
-  "username": "johndoe",           // Indexed, Unique
-  "email": "john@example.com",     // Indexed, Unique  
-  "password": "$2a$12$...",        // BCrypt hashed
-  "roles": ["USER"],
-  "profilePicUrl": null,
-  "createdAt": ISODate("..."),
-  "updatedAt": ISODate("..."),
-  "auditDateTime": {...},
-  "createdBy": null,
-  "updatedBy": null,
-  "deletedBy": null
-}
+### Users Table
+```sql
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255),
+    username VARCHAR(20) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    profile_pic_url VARCHAR(500),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    deleted_by VARCHAR(255)
+);
 ```
 
-### Indexes
-```javascript
-// Compound indexes for uniqueness
-db.User.createIndex({"username": 1}, {unique: true})
-db.User.createIndex({"email": 1}, {unique: true})
-
-// Query optimization indexes  
-db.User.createIndex({"username": 1, "email": 1})
+### User Roles Table
+```sql
+CREATE TABLE user_roles (
+    user_id BIGINT NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 ```
 
-## 🛠️ Development
+### Shops Table
+```sql
+CREATE TABLE shops (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    gstin VARCHAR(50),
+    phone_number VARCHAR(20),
+    address TEXT,
+    user_id VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    deleted_by VARCHAR(255)
+);
+```
+
+### Routines Table
+```sql
+CREATE TABLE routines (
+    id BIGSERIAL PRIMARY KEY,
+    routine_id VARCHAR(255),
+    routine_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    routine_type VARCHAR(50),
+    routine_frequency VARCHAR(50),
+    user_id VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    deleted_by VARCHAR(255)
+);
+```
+
+### Database Indexes
+```sql
+-- Performance optimization indexes
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_shops_user_id ON shops(user_id);
+CREATE INDEX idx_routines_user_id ON routines(user_id);
+CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
+```
+
+## 🔧 Development
 
 ### Project Structure
 ```
@@ -336,32 +400,16 @@ src/
 
 ### 🐳 Docker Deployment
 
-1. **Create Dockerfile**
-   ```dockerfile
-   FROM openjdk:17-jdk-slim
-   
-   WORKDIR /app
-   COPY target/demo-login-1.0.0.jar app.jar
-   
-   EXPOSE 9091
-   
-   ENV SPRING_PROFILES_ACTIVE=prod
-   ENV JWT_SECRET=your-production-secret-key
-   
-   ENTRYPOINT ["java", "-jar", "app.jar"]
-   ```
+The project includes Docker support with PostgreSQL:
 
-2. **Build and run**
-   ```bash
-   # Build JAR
-   ./mvnw clean package
-   
-   # Build Docker image
-   docker build -t spring-security-module .
-   
-   # Run with Docker Compose
-   docker-compose up -d
-   ```
+```bash
+# Start with Docker Compose
+docker-compose up -d
+
+# This will start:
+# - PostgreSQL database on port 5432
+# - Spring Boot application on port 9091
+```
 
 ### ☁️ Cloud Deployment
 

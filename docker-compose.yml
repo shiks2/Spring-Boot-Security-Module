@@ -8,7 +8,7 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password123
       MONGO_INITDB_DATABASE: backendProject
     volumes:
@@ -28,8 +28,9 @@ services:
       MONGODB_HOST: mongodb
       MONGODB_PORT: 27017
       MONGODB_DATABASE: backendProject
-      MONGODB_USERNAME: admin
+      MONGODB_USERNAME: root
       MONGODB_PASSWORD: password123
+      MONGODB_AUTH_DB: admin
       JWT_SECRET: your-very-secure-production-secret-key-minimum-256-bits-change-this-in-production
       JWT_EXPIRATION: 3600000
     depends_on:
